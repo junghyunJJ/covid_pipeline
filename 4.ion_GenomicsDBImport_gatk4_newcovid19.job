@@ -1,0 +1,27 @@
+#!/bin/bash
+#SBATCH --ntasks=1
+#SBATCH --job-name=GenomicsDBImport
+#SBATCH --cpus-per-task=1
+#SBATCH --time=48:00:00
+#SBATCH --mem=32G
+#SBATCH --array=1-50
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=jjung658@usc.edu
+#SBATCH --output=4.ion_GenomicsDBImport_gatk4_newcovid19-%A_%a
+
+i=$SLURM_ARRAY_TASK_ID
+sel=$(sed -n $i'p' ref_dat/SureSelect_Human_All_Exon_V5_50intervals_index.txt)
+
+module purge
+module load gcc
+module load intel
+module load jdk
+
+tools_newcovid19/gatk-4.2.0.0/gatk --java-options "-Xms30G -Xmx30G -XX:ParallelGCThreads=1" GenomicsDBImport \
+  --genomicsdb-workspace-path ion_res_gatk4_newcovid19/ion_GenomicsDBImport_gatk4_newcovid19/ion_gatk4_newcovid19_database_${i} \
+  --sample-name-map ion_res_gatk4_newcovid19/iontorrent \
+  --tmp-dir ion_res_gatk4_newcovid19/tmp \
+  -L ${sel} \
+  --reader-threads 5 \
+  --batch-size 50 \
+  --merge-input-intervals

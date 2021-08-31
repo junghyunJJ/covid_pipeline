@@ -1,0 +1,32 @@
+#!/bin/bash
+#SBATCH --ntasks=1
+#SBATCH --job-name=GenotypeGVCFs
+#SBATCH --cpus-per-task=1
+#SBATCH --mem-per-cpu=36G
+#SBATCH --time=168:00:00
+#SBATCH --partition=oneweek
+#SBATCH --array=1-50
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=jjung658@usc.edu
+#SBATCH --output=5.ion_GenotypeGVCFs_gatk4_newcovid19-%A_%a
+
+i=$SLURM_ARRAY_TASK_ID
+sel=$(sed -n $i'p' ref_dat/SureSelect_Human_All_Exon_V5_50intervals_index.txt)
+
+module purge
+module load gcc
+module load intel
+module load jdk
+
+#mkdir -p ion_res_gatk4_newcovid19/ion_res_vcf_gatk4_newcovid19/
+
+tools_newcovid19/gatk-4.2.0.0/gatk --java-options "-Xms34G -Xmx34G -XX:ParallelGCThreads=1" GenotypeGVCFs \
+        -R ref_dat/ref_gatk_newcovid19/Homo_sapiens_assembly38.fasta \
+        -G StandardAnnotation -G AS_StandardAnnotation \
+        -D ref_dat/ref_gatk_newcovid19/Homo_sapiens_assembly38.dbsnp138.vcf \
+        -V gendb://ion_res_gatk4_newcovid19/ion_GenomicsDBImport_gatk4_newcovid19/ion_gatk4_newcovid19_database_${i} \
+        -L ${sel} \
+        --tmp-dir ion_res_gatk4_newcovid19/tmp \
+        --merge-input-intervals \
+        -O ion_res_gatk4_newcovid19/ion_res_vcf_gatk4_newcovid19/ion_gatk4_newcovid19_${i}.vcf.gz
+        #--only-output-calls-starting-in-intervals \
